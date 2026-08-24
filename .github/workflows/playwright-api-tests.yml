@@ -156,19 +156,20 @@ jobs:
           cat > /tmp/register-provider.php <<'PHP'
           <?php
 
+          // Register after Krayin's RouteServiceProvider so this limiter override
+          // wins (providers boot in registration order).
           $file = 'config/app.php';
           $contents = file_get_contents($file);
-          $needle = "'providers' => [";
-          $provider = "App\\Providers\\CiRateLimitServiceProvider::class,";
+          $needle = 'App\\Providers\\RouteServiceProvider::class,';
+          $insert = $needle."\n\n        App\\Providers\\CiRateLimitServiceProvider::class,";
 
-          if (! str_contains($contents, $provider)) {
-              $contents = str_replace(
-                  $needle,
-                  $needle."\n\n        ".$provider,
-                  $contents
-              );
+          if (! str_contains($contents, 'CiRateLimitServiceProvider')) {
+              if (! str_contains($contents, $needle)) {
+                  fwrite(STDERR, "Could not find provider registration point.\n");
+                  exit(1);
+              }
 
-              file_put_contents($file, $contents);
+              file_put_contents($file, str_replace($needle, $insert, $contents));
 
               echo "Provider registered.\n";
           }
