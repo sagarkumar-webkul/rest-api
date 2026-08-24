@@ -32,7 +32,6 @@ jobs:
           --health-retries=10
 
     env:
-      APP_DIR: ${{ runner.temp }}/krayin-app
       APP_URL: http://127.0.0.1:8000
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
@@ -45,6 +44,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Defined here because the runner context is not available in job-level env
+      - name: Define application directory
+        run: echo "APP_DIR=${RUNNER_TEMP}/krayin-app" >> "$GITHUB_ENV"
 
       - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
