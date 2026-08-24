@@ -1,0 +1,21 @@
+{
+  "name": "krayin-api-tests",
+  "version": "1.0.0",
+  "description": "API tests for Krayin CRM using Playwright",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:auth": "npx playwright test tests/api/auth.spec.ts",
+    "test:leads": "npx playwright test tests/api/leads.spec.ts",
+    "test:contacts": "npx playwright test tests/api/contacts-persons.spec.ts tests/api/contacts-organizations.spec.ts",
+    "test:products": "npx playwright test tests/api/products.spec.ts",
+    "test:quotes": "npx playwright test tests/api/quotes.spec.ts",
+    "test:activities": "npx playwright test tests/api/activities.spec.ts",
+    "test:mails": "npx playwright test tests/api/mails.spec.ts",
+    "test:dashboard": "npx playwright test tests/api/dashboard.spec.ts",
+    "test:settings": "npx playwright test tests/api/settings-*.spec.ts",
+    "test:report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}
