@@ -61,8 +61,10 @@ jobs:
         with:
           node-version: '20'
 
+      # Pinned to 2.1.* because the REST API module targets Krayin v2.1 (Laravel 10);
+      # Krayin v2.2+ (Laravel 12) drops App\Exceptions\Handler which the module extends.
       - name: Install Krayin CRM
-        run: composer create-project krayin/laravel-crm "${{ env.APP_DIR }}" --no-interaction --prefer-dist --no-progress
+        run: composer create-project krayin/laravel-crm "${{ env.APP_DIR }}" "2.1.*" --no-interaction --prefer-dist --no-progress
 
       - name: Configure Krayin environment
         working-directory: ${{ env.APP_DIR }}

@@ -61,7 +61,8 @@ Copy `.env.example` to `.env` or export the variables in your shell.
 
 ```shell
 # Create the Krayin CRM project
-composer create-project krayin/laravel-crm
+# (pinned to 2.1.* — the REST API module currently targets Krayin v2.1 / Laravel 10)
+composer create-project krayin/laravel-crm "2.1.*"
 
 cd krayin-app   # or your project folder name
 
@@ -135,7 +136,7 @@ CI retries failing tests twice (`retries: 2`) while local runs do not retry.
 The GitHub Actions workflow [`.github/workflows/playwright-api-tests.yml`](../../.github/workflows/playwright-api-tests.yml) runs the full suite automatically:
 
 1. Starts a MySQL 8 service container.
-2. Installs **Krayin CRM** via `composer create-project krayin/laravel-crm`.
+2. Installs **Krayin CRM 2.1.\*** via `composer create-project krayin/laravel-crm` (the REST API module targets Krayin v2.1 / Laravel 10).
 3. Registers **this repository** as a composer path repository and installs it as the REST API module (`krayin/rest-api:@dev`), so every PR is tested against its own code.
 4. Runs `krayin-crm:install`, creates the admin user non-interactively and runs `krayin-rest-api:install`.
 5. Serves the app (`php artisan serve`) and smoke-checks the login endpoint.
