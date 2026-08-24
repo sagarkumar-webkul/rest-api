@@ -126,6 +126,56 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: php artisan krayin-rest-api:install --no-interaction
 
+      # The default Krayin rate limiter allows 60 API requests/min, which throttles
+      # the test suite (429 -> cascading auth failures). This CI-only provider
+      # removes the limit; it lives in the generated app, never in the repository.
+      - name: Lift API rate limiting for test environment
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          cat > app/Providers/CiRateLimitServiceProvider.php <<'PHP'
+          <?php
+
+          namespace App\Providers;
+
+          use Illuminate\Cache\RateLimiting\Limit;
+          use Illuminate\Http\Request;
+          use Illuminate\Support\Facades\RateLimiter;
+          use Illuminate\Support\ServiceProvider;
+
+          class CiRateLimitServiceProvider extends ServiceProvider
+          {
+              public function boot(): void
+              {
+                  RateLimiter::for('api', function (Request $request) {
+                      return Limit::none();
+                  });
+              }
+          }
+          PHP
+
+          cat > /tmp/register-provider.php <<'PHP'
+          <?php
+
+          $file = 'config/app.php';
+          $contents = file_get_contents($file);
+          $needle = "'providers' => [";
+          $provider = "App\\Providers\\CiRateLimitServiceProvider::class,";
+
+          if (! str_contains($contents, $provider)) {
+              $contents = str_replace(
+                  $needle,
+                  $needle."\n\n        ".$provider,
+                  $contents
+              );
+
+              file_put_contents($file, $contents);
+
+              echo "Provider registered.\n";
+          }
+          PHP
+
+          php /tmp/register-provider.php
+
       - name: Start application server
         working-directory: ${{ env.APP_DIR }}
         run: |
