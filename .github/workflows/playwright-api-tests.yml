@@ -87,7 +87,12 @@ jobs:
       # local composer path repository so CI always validates the checked-out code.
       - name: Register REST API module from this repository
         working-directory: ${{ env.APP_DIR }}
-        run: composer config repositories.restapi --json '{"type":"path","url":"${{ github.workspace }}","options":{"symlink":false}}'
+        run: |
+          # CI test environment only: allow resolution of framework releases with
+          # open security advisories (blocked by default since Composer 2.9).
+          composer config policy.advisories.block false
+
+          composer config repositories.restapi --json '{"type":"path","url":"${{ github.workspace }}","options":{"symlink":false}}'
 
       - name: Install REST API module
         working-directory: ${{ env.APP_DIR }}
