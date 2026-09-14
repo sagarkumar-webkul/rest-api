@@ -60,6 +60,18 @@ export class WarehouseService extends Service {
       params: { warehouse_id: warehouseId },
     });
   }
+
+  async getActivities(warehouseId: number | string): Promise<APIResponse> {
+    return this.client.get(`${this.basePath}/${warehouseId}/activities`);
+  }
+
+  async attachTag(warehouseId: number | string, data: any): Promise<APIResponse> {
+    return this.client.post(`${this.basePath}/${warehouseId}/tags`, { data });
+  }
+
+  async detachTag(warehouseId: number | string, tagId: number | string): Promise<APIResponse> {
+    return this.client.delete(`${this.basePath}/${warehouseId}/tags/${tagId}`);
+  }
 }
 
 export class LocationService extends Service {

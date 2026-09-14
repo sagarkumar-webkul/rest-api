@@ -2,19 +2,19 @@ import { test, expect, unique, uniqueNumber, logResponseOnFailure } from '../../
 import { LocationService } from '../../services';
 
 test.describe('Products API', () => {
-  test('list products without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list products without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/products');
     await logResponseOnFailure(response, 'list products without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list products', async ({ productService }) => {
+  test('@smoke @crud @regression list products', async ({ productService }) => {
     const response = await productService.list();
     await logResponseOnFailure(response, 'list products');
     expect(response.status()).toBe(200);
   });
 
-  test('create product success', async ({ productService }) => {
+  test('@smoke @crud @regression create product success', async ({ productService }) => {
     const response = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -29,7 +29,7 @@ test.describe('Products API', () => {
     expect(body.message).toContain('created successfully');
   });
 
-  test('create product with non-numeric price', async ({ productService }) => {
+  test('@validation @crud @negative @regression create product with non-numeric price', async ({ productService }) => {
     const response = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -41,7 +41,7 @@ test.describe('Products API', () => {
     expect(body.errors.price[0]).toContain('must be a decimal');
   });
 
-  test('create product with negative price', async ({ productService }) => {
+  test('@validation @crud @negative @regression create product with negative price', async ({ productService }) => {
     const response = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -53,7 +53,7 @@ test.describe('Products API', () => {
     expect(body.errors.price[0]).toContain('must be a decimal');
   });
 
-  test('show product', async ({ productService }) => {
+  test('@crud @regression show product', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -68,13 +68,13 @@ test.describe('Products API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show product not found', async ({ productService }) => {
+  test('@crud @negative @regression show product not found', async ({ productService }) => {
     const response = await productService.getById(999999);
     await logResponseOnFailure(response, 'show product not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update product', async ({ productService }) => {
+  test('@crud @regression update product', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -92,7 +92,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update product with invalid price', async ({ productService }) => {
+  test('@validation @crud @negative @regression update product with invalid price', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -105,7 +105,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('delete product', async ({ productService }) => {
+  test('@crud @regression delete product', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -120,25 +120,25 @@ test.describe('Products API', () => {
     expect(body.data.message).toContain('deleted successfully');
   });
 
-  test('delete product not found', async ({ productService }) => {
+  test('@crud @negative @regression delete product not found', async ({ productService }) => {
     const response = await productService.delete(999999);
     await logResponseOnFailure(response, 'delete product not found');
     expect(response.status()).toBe(404);
   });
 
-  test('search products', async ({ productService }) => {
+  test('@pagination @regression search products', async ({ productService }) => {
     const response = await productService.search('Test');
     await logResponseOnFailure(response, 'search products');
     expect(response.status()).toBe(200);
   });
 
-  test('export products', async ({ productService }) => {
+  test('@crud @regression export products', async ({ productService }) => {
     const response = await productService.export();
     await logResponseOnFailure(response, 'export products');
     expect(response.status()).toBe(200);
   });
 
-  test('mass destroy products', async ({ productService }) => {
+  test('@acid @crud @regression mass destroy products', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -151,15 +151,13 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('mass destroy products with missing indices', async ({ productService }) => {
-    const response = await productService.client.post('/api/v1/products/mass-destroy', {
-      data: {},
-    });
+  test('@validation @acid @crud @negative @regression mass destroy products with missing indices', async ({ productService }) => {
+    const response = await productService.massDestroyRaw({});
     await logResponseOnFailure(response, 'mass destroy products with missing indices');
     expect(response.status()).toBe(422);
   });
 
-  test('product warehouses', async ({ productService }) => {
+  test('@crud @regression product warehouses', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -172,7 +170,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('product store inventories', async ({ authedApi, productService, warehouseService }) => {
+  test('@crud @regression product store inventories', async ({ authedApi, productService, warehouseService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -215,7 +213,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('product store inventories with missing stock', async ({ productService }) => {
+  test('@validation @crud @negative @regression product store inventories with missing stock', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -230,7 +228,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('product activities', async ({ productService }) => {
+  test('@crud @regression product activities', async ({ productService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -243,7 +241,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('product attach tag', async ({ productService, tagService }) => {
+  test('@crud @regression product attach tag', async ({ productService, tagService }) => {
     const productResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -262,7 +260,7 @@ test.describe('Products API', () => {
     expect(body.message).toContain('attached successfully');
   });
 
-  test('product attach tag with missing tag id', async ({ authedApi, productService }) => {
+  test('@validation @crud @negative @regression product attach tag with missing tag id', async ({ authedApi, productService }) => {
     const productResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -278,7 +276,7 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('product detach tag', async ({ productService, tagService }) => {
+  test('@crud @regression product detach tag', async ({ productService, tagService }) => {
     const productResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -297,13 +295,13 @@ test.describe('Products API', () => {
     expect(body.message).toContain('detached successfully');
   });
 
-  test('product with wrong http method', async ({ authedApi }) => {
+  test('@negative @regression product with wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/products/1', { data: {} });
     await logResponseOnFailure(response, 'product with wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue60: create product with negative quantity', async ({ productService }) => {
+  test('@validation @crud @negative @regression issue60: create product with negative quantity', async ({ productService }) => {
     const response = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -314,13 +312,13 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue61: product inventory endpoint not supported via GET', async ({ authedApi }) => {
+  test('@crud @negative @regression issue61: product inventory endpoint not supported via GET', async ({ authedApi }) => {
     const response = await authedApi.get('/api/v1/products/1/inventories');
     await logResponseOnFailure(response, 'issue61: product inventory endpoint not supported via GET');
     expect(response.status()).toBe(405);
   });
 
-  test('issue62: store inventories with negative stock', async ({ authedApi, productService, warehouseService }) => {
+  test('@validation @crud @negative @regression issue62: store inventories with negative stock', async ({ authedApi, productService, warehouseService }) => {
     const createResponse = await productService.create({
       name: unique('Product'),
       sku: unique('SKU'),
@@ -364,25 +362,25 @@ test.describe('Products API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue63: show product with invalid id', async ({ productService }) => {
+  test('@crud @negative @regression issue63: show product with invalid id', async ({ productService }) => {
     const response = await productService.getById(999999);
     await logResponseOnFailure(response, 'issue63: show product with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue64: update product with invalid id', async ({ productService }) => {
+  test('@crud @negative @regression issue64: update product with invalid id', async ({ productService }) => {
     const response = await productService.update(999999, { name: unique('Product') });
     await logResponseOnFailure(response, 'issue64: update product with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue65: delete product with invalid id', async ({ productService }) => {
+  test('@crud @negative @regression issue65: delete product with invalid id', async ({ productService }) => {
     const response = await productService.delete(999999);
     await logResponseOnFailure(response, 'issue65: delete product with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue66: mass destroy products with invalid ids', async ({ productService }) => {
+  test('@acid @crud @negative @regression issue66: mass destroy products with invalid ids', async ({ productService }) => {
     const response = await productService.massDestroy([999999]);
     await logResponseOnFailure(response, 'issue66: mass destroy products with invalid ids');
     expect(response.status()).toBe(404);

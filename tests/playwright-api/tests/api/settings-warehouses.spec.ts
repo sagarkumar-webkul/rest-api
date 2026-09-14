@@ -2,19 +2,19 @@ import { test, expect, unique, uniqueNumber, logResponseOnFailure } from '../../
 import { LocationService } from '../../services';
 
 test.describe('Settings Warehouses API', () => {
-  test('list warehouses without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list warehouses without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/settings/warehouses');
     await logResponseOnFailure(response, 'list warehouses without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list warehouses', async ({ warehouseService }) => {
+  test('@crud @regression list warehouses', async ({ warehouseService }) => {
     const response = await warehouseService.list();
     await logResponseOnFailure(response, 'list warehouses');
     expect(response.status()).toBe(200);
   });
 
-  test('create warehouse', async ({ warehouseService }) => {
+  test('@crud @regression create warehouse', async ({ warehouseService }) => {
     const response = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -34,13 +34,13 @@ test.describe('Settings Warehouses API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('create warehouse with empty payload', async ({ warehouseService }) => {
+  test('@validation @crud @negative @regression create warehouse with empty payload', async ({ warehouseService }) => {
     const response = await warehouseService.create({});
     await logResponseOnFailure(response, 'create warehouse with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('show warehouse', async ({ warehouseService }) => {
+  test('@crud @regression show warehouse', async ({ warehouseService }) => {
     const createResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -63,13 +63,13 @@ test.describe('Settings Warehouses API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show warehouse not found', async ({ warehouseService }) => {
+  test('@crud @negative @regression show warehouse not found', async ({ warehouseService }) => {
     const response = await warehouseService.getById(999999);
     await logResponseOnFailure(response, 'show warehouse not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update warehouse', async ({ warehouseService }) => {
+  test('@crud @regression update warehouse', async ({ warehouseService }) => {
     const createResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -90,7 +90,7 @@ test.describe('Settings Warehouses API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update warehouse with empty payload', async ({ warehouseService }) => {
+  test('@crud @negative @regression update warehouse with empty payload', async ({ warehouseService }) => {
     const createResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -111,7 +111,7 @@ test.describe('Settings Warehouses API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete warehouse', async ({ warehouseService }) => {
+  test('@crud @regression delete warehouse', async ({ warehouseService }) => {
     const createResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -132,19 +132,19 @@ test.describe('Settings Warehouses API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete warehouse not found', async ({ warehouseService }) => {
+  test('@crud @negative @regression delete warehouse not found', async ({ warehouseService }) => {
     const response = await warehouseService.delete(999999);
     await logResponseOnFailure(response, 'delete warehouse not found');
     expect(response.status()).toBe(404);
   });
 
-  test('wrong http method', async ({ authedApi }) => {
+  test('@negative @regression wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/settings/warehouses/1', { data: {} });
     await logResponseOnFailure(response, 'wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue140: create location with invalid warehouse id', async ({ authedApi }) => {
+  test('@validation @crud @negative @regression issue140: create location with invalid warehouse id', async ({ authedApi }) => {
     const locationService = new LocationService(authedApi);
     const response = await locationService.create({
       name: unique('Location'),
@@ -154,7 +154,7 @@ test.describe('Settings Warehouses API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue141: create warehouse with invalid country', async ({ warehouseService }) => {
+  test('@validation @crud @negative @regression issue141: create warehouse with invalid country', async ({ warehouseService }) => {
     const response = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -172,7 +172,7 @@ test.describe('Settings Warehouses API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue142: create location with duplicate name', async ({ authedApi, warehouseService }) => {
+  test('@validation @crud @negative @regression issue142: create location with duplicate name', async ({ authedApi, warehouseService }) => {
     const warehouseResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -196,14 +196,14 @@ test.describe('Settings Warehouses API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue144: delete location with invalid id', async ({ authedApi }) => {
+  test('@crud @negative @regression issue144: delete location with invalid id', async ({ authedApi }) => {
     const locationService = new LocationService(authedApi);
     const response = await locationService.delete(999999);
     await logResponseOnFailure(response, 'issue144: delete location with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue146: detach unattached tag from warehouse', async ({ warehouseService }) => {
+  test('@crud @negative @regression issue146: detach unattached tag from warehouse', async ({ warehouseService }) => {
     const warehouseResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -218,12 +218,12 @@ test.describe('Settings Warehouses API', () => {
       },
     });
     const { data: warehouse } = await warehouseResponse.json();
-    const response = await warehouseService.client.delete(`/api/v1/settings/warehouses/${warehouse.id}/tags/999999`);
+    const response = await warehouseService.detachTag(warehouse.id, 999999);
     await logResponseOnFailure(response, 'issue146: detach unattached tag from warehouse');
     expect(response.status()).toBe(404);
   });
 
-  test('issue143: update location returns success message', async ({ authedApi, warehouseService }) => {
+  test('@crud @regression issue143: update location returns success message', async ({ authedApi, warehouseService }) => {
     const warehouseResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -252,7 +252,7 @@ test.describe('Settings Warehouses API', () => {
     expect(body.message).toContain('Location updated successfully');
   });
 
-  test('issue145: warehouse activities endpoint available', async ({ warehouseService }) => {
+  test('@crud @regression issue145: warehouse activities endpoint available', async ({ warehouseService }) => {
     const warehouseResponse = await warehouseService.create({
       name: unique('Warehouse'),
       contact_name: 'John',
@@ -267,7 +267,7 @@ test.describe('Settings Warehouses API', () => {
       },
     });
     const { data: warehouse } = await warehouseResponse.json();
-    const response = await warehouseService.client.get(`/api/v1/settings/warehouses/${warehouse.id}/activities`);
+    const response = await warehouseService.getActivities(warehouse.id);
     await logResponseOnFailure(response, 'issue145: warehouse activities endpoint available');
     expect(response.status()).toBe(200);
   });

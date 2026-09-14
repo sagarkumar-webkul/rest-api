@@ -1,19 +1,19 @@
 import { test, expect, unique, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Settings Users API', () => {
-  test('list users without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list users without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/settings/users');
     await logResponseOnFailure(response, 'list users without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list users', async ({ userService }) => {
+  test('@crud @regression list users', async ({ userService }) => {
     const response = await userService.list();
     await logResponseOnFailure(response, 'list users');
     expect(response.status()).toBe(200);
   });
 
-  test('create user', async ({ userService }) => {
+  test('@crud @regression create user', async ({ userService }) => {
     const response = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -28,13 +28,13 @@ test.describe('Settings Users API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('create user with empty payload', async ({ userService }) => {
+  test('@validation @crud @negative @regression create user with empty payload', async ({ userService }) => {
     const response = await userService.create({});
     await logResponseOnFailure(response, 'create user with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('show user', async ({ userService }) => {
+  test('@crud @regression show user', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -52,13 +52,13 @@ test.describe('Settings Users API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show user not found', async ({ userService }) => {
+  test('@crud @negative @regression show user not found', async ({ userService }) => {
     const response = await userService.getById(999999);
     await logResponseOnFailure(response, 'show user not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update user', async ({ userService }) => {
+  test('@crud @regression update user', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -74,7 +74,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update user with empty payload', async ({ userService }) => {
+  test('@crud @negative @regression update user with empty payload', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -90,7 +90,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete user', async ({ userService }) => {
+  test('@crud @regression delete user', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -106,19 +106,19 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete user not found', async ({ userService }) => {
+  test('@crud @negative @regression delete user not found', async ({ userService }) => {
     const response = await userService.delete(999999);
     await logResponseOnFailure(response, 'delete user not found');
     expect(response.status()).toBe(404);
   });
 
-  test('wrong http method', async ({ authedApi }) => {
+  test('@negative @regression wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/settings/users/1', { data: {} });
     await logResponseOnFailure(response, 'wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue21: update user with empty email', async ({ userService }) => {
+  test('@validation @crud @negative @regression issue21: update user with empty email', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -134,7 +134,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue94: create user with invalid view permission', async ({ userService }) => {
+  test('@authorization @validation @crud @negative @regression issue94: create user with invalid view permission', async ({ userService }) => {
     const response = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -147,7 +147,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue95: create user with invalid role id', async ({ userService }) => {
+  test('@validation @crud @negative @regression issue95: create user with invalid role id', async ({ userService }) => {
     const response = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -160,7 +160,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue96: create user with invalid group id', async ({ userService }) => {
+  test('@validation @crud @negative @regression issue96: create user with invalid group id', async ({ userService }) => {
     const response = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -174,7 +174,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue97: create user with empty password', async ({ userService }) => {
+  test('@validation @security @crud @negative @regression issue97: create user with empty password', async ({ userService }) => {
     const response = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -187,15 +187,15 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue100: list users with invalid sort parameter', async ({ userService }) => {
-    const response = await userService.client.get('/api/v1/settings/users', {
+  test('@validation @pagination @crud @negative @regression issue100: list users with invalid sort parameter', async ({ userService }) => {
+    const response = await userService.list({
       params: { sort: 'bogus' },
     });
     await logResponseOnFailure(response, 'issue100: list users with invalid sort parameter');
     expect(response.status()).toBe(422);
   });
 
-  test('issue104: update user with invalid group id', async ({ userService }) => {
+  test('@validation @crud @negative @regression issue104: update user with invalid group id', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -211,25 +211,25 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue105: delete user with invalid id', async ({ userService }) => {
+  test('@crud @negative @regression issue105: delete user with invalid id', async ({ userService }) => {
     const response = await userService.delete(999999);
     await logResponseOnFailure(response, 'issue105: delete user with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue108: mass update users with invalid indices', async ({ userService }) => {
+  test('@acid @crud @negative @regression issue108: mass update users with invalid indices', async ({ userService }) => {
     const response = await userService.massUpdate([999999], 1);
     await logResponseOnFailure(response, 'issue108: mass update users with invalid indices');
     expect(response.status()).toBe(404);
   });
 
-  test('issue109: mass destroy users with invalid indices', async ({ userService }) => {
+  test('@acid @crud @negative @regression issue109: mass destroy users with invalid indices', async ({ userService }) => {
     const response = await userService.massDestroy([999999]);
     await logResponseOnFailure(response, 'issue109: mass destroy users with invalid indices');
     expect(response.status()).toBe(404);
   });
 
-  test('issue98: create user with missing role id does not flag name and email', async ({ userService }) => {
+  test('@validation @crud @negative @regression issue98: create user with missing role id does not flag name and email', async ({ userService }) => {
     const response = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -244,7 +244,7 @@ test.describe('Settings Users API', () => {
     expect(body.errors.role_id).toBeTruthy();
   });
 
-  test('issue101: update user with only password fields', async ({ userService }) => {
+  test('@validation @security @crud @negative @regression issue101: update user with only password fields', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -263,7 +263,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue102: update user with empty password', async ({ userService }) => {
+  test('@validation @security @crud @negative @regression issue102: update user with empty password', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -282,7 +282,7 @@ test.describe('Settings Users API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue103: update user with missing role id does not flag name and email', async ({ userService }) => {
+  test('@validation @crud @negative @regression issue103: update user with missing role id does not flag name and email', async ({ userService }) => {
     const createResponse = await userService.create({
       name: unique('User'),
       email: unique('user') + '@example.com',
@@ -300,7 +300,7 @@ test.describe('Settings Users API', () => {
     expect(body.errors.role_id).toBeTruthy();
   });
 
-  test('issue107: mass update users with string value', async ({ userService }) => {
+  test('@validation @acid @crud @negative @regression issue107: mass update users with string value', async ({ userService }) => {
     const response = await userService.massUpdate([1], 'inactive');
     await logResponseOnFailure(response, 'issue107: mass update users with string value');
     expect(response.status()).toBe(422);

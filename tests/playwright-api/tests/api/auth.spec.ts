@@ -2,7 +2,7 @@ import { test, expect, logResponseOnFailure } from '../../fixtures/api.fixture';
 import { config } from '../../utils/config';
 
 test.describe('Login API', () => {
-  test('login with valid credentials', async ({ authService }) => {
+  test('@smoke @auth @regression login with valid credentials', async ({ authService }) => {
     const response = await authService.login({
       email: config.testUser.email,
       password: config.testUser.password,
@@ -18,10 +18,9 @@ test.describe('Login API', () => {
     expect(body.data.email).toBe(config.testUser.email);
     expect(body.data.name).toBeTruthy();
 
-    console.log(`\nLOGIN SUCCESS: Token received`);
   });
 
-  test('login with missing fields', async ({ authService }) => {
+  test('@auth @validation @negative @regression login with missing fields', async ({ authService }) => {
     const response = await authService.login({
       email: '',
       password: '',
@@ -37,7 +36,7 @@ test.describe('Login API', () => {
     expect(body.errors.device_name[0]).toContain('required');
   });
 
-  test('login with invalid email format', async ({ authService }) => {
+  test('@auth @validation @negative @regression login with invalid email format', async ({ authService }) => {
     const response = await authService.login({
       email: 'not-an-email',
       password: config.testUser.password,
@@ -50,7 +49,7 @@ test.describe('Login API', () => {
     expect(body.errors.email[0]).toContain('valid email address');
   });
 
-  test('login with wrong password', async ({ authService }) => {
+  test('@auth @validation @security @negative @regression login with wrong password', async ({ authService }) => {
     const response = await authService.login({
       email: config.testUser.email,
       password: 'wrong-password',
@@ -64,7 +63,7 @@ test.describe('Login API', () => {
     expect(body.errors.email[0]).toBe('The provided credentials are incorrect.');
   });
 
-  test('login with wrong http method', async ({ apiClient }) => {
+  test('@auth @negative @regression login with wrong http method', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/login');
 
     await logResponseOnFailure(response, 'login with wrong http method');
@@ -76,7 +75,7 @@ test.describe('Login API', () => {
 });
 
 test.describe('Get Current User', () => {
-  test('get current user with valid token', async ({ authedApi }) => {
+  test('@smoke @auth @crud @regression get current user with valid token', async ({ authedApi }) => {
     const response = await authedApi.get('/api/v1/get');
 
     await logResponseOnFailure(response, 'get current user with valid token');
@@ -86,7 +85,7 @@ test.describe('Get Current User', () => {
     expect(body.data).toBeTruthy();
   });
 
-  test('get current user without token', async ({ authService }) => {
+  test('@auth @crud @negative @regression get current user without token', async ({ authService }) => {
     const response = await authService.getAccount();
 
     await logResponseOnFailure(response, 'get current user without token');
@@ -96,7 +95,7 @@ test.describe('Get Current User', () => {
 });
 
 test.describe('Logout', () => {
-  test('logout successfully', async ({ authedApi }) => {
+  test('@auth @regression logout successfully', async ({ authedApi }) => {
     const response = await authedApi.delete('/api/v1/logout');
 
     await logResponseOnFailure(response, 'logout successfully');

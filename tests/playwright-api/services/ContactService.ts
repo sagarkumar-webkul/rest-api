@@ -23,6 +23,14 @@ export class PersonService extends Service {
     super(client, '/api/v1/contacts/persons');
   }
 
+  /**
+   * Persons expose no `emails` sub-resource — kept so the spec asserting that
+   * (404) goes through the service layer rather than a raw URL.
+   */
+  async createEmail(id: number | string, data: any): Promise<APIResponse> {
+    return this.client.post(`/api/v1/contacts/persons/${id}/emails`, { data });
+  }
+
   async getActivities(id: number | string): Promise<APIResponse> {
     return this.client.get(`/api/v1/contacts/persons/${id}/activities`);
   }

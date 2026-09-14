@@ -45,8 +45,8 @@ export class LeadService extends Service {
     });
   }
 
-  async removeProduct(leadId: number | string): Promise<APIResponse> {
-    return this.client.delete(`/api/v1/leads/product/${leadId}`);
+  async removeProduct(leadId: number | string, data?: { product_id: number }): Promise<APIResponse> {
+    return this.client.delete(`/api/v1/leads/product/${leadId}`, data ? { data } : undefined);
   }
 
   async getActivities(id: number | string): Promise<APIResponse> {

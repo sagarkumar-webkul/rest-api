@@ -1,168 +1,98 @@
-# Krayin REST API — Playwright Automation Test Suite
+# Krayin REST API — Playwright Automation
 
-API automation test suite for the **Krayin CRM REST API**, built with [Playwright](https://playwright.dev/docs/api-testing) (TypeScript). It covers authentication, leads, contacts, products, quotes, activities, mails, dashboard and all major settings endpoints.
+Executable API automation for the Krayin CRM REST module (`/api/v1`), built on
+`@playwright/test` and `APIRequestContext`.
 
-## 1. Test Coverage
+## Layout
 
-| Suite | File | Description |
+```
+api/ApiClient.ts          HTTP client: base URL, auth header, JSON defaults
+services/                 One service per resource — no raw requests in specs
+fixtures/api.fixture.ts   Auth contexts, services and per-test cleanup
+schemas/api-schemas.ts    Zod response contracts (envelopes + resources)
+utils/assertions.ts       Status + header + schema assertions with redacted debug output
+utils/cleanup.ts          LIFO cleanup registry
+utils/test-data.ts        Unique, parallel-safe payload factories and builders
+utils/config.ts           Environment configuration (fails fast when unset)
+tests/api/                The specs
+```
+
+## Setup
+
+```bash
+cp .env.example .env      # then fill it in
+npm ci
+npx playwright install chromium --with-deps
+```
+
+### Environment variables
+
+Nothing is hardcoded — the suite refuses to start if a required variable is missing.
+
+| Variable | Required | Purpose |
 |---|---|---|
-| Authentication | `tests/api/auth.spec.ts` | Login, logout, invalid credentials |
-| Leads | `tests/api/leads.spec.ts` | CRUD, stages, tags, products, quotes, kanban lookups |
-| Contacts (Persons) | `tests/api/contacts-persons.spec.ts` | Person CRUD, tags, activities |
-| Contacts (Organizations) | `tests/api/contacts-organizations.spec.ts` | Organization CRUD |
-| Products | `tests/api/products.spec.ts` | Product CRUD, inventories, warehouses, tags |
-| Quotes | `tests/api/quotes.spec.ts` | Quote CRUD, items, lead products, quote mail |
-| Activities | `tests/api/activities.spec.ts` | Activity CRUD, file download |
-| Mails | `tests/api/mails.spec.ts` | Mail CRUD, mass update, attachments, tags |
-| Dashboard | `tests/api/dashboard.spec.ts` | Dashboard data endpoint |
-| Settings | `tests/api/settings-*.spec.ts` | Attributes, groups, pipelines, sources, types, roles, users, tags, warehouses, email templates, web forms, webhooks, workflows, marketing events & campaigns |
+| `APP_URL` | yes | Base URL of the Krayin app with the REST API installed |
+| `TEST_USER_EMAIL` | yes | Admin account used by most specs |
+| `TEST_USER_PASSWORD` | yes | Password for that account |
+| `TEST_LIMITED_USER_EMAIL` | no | Low-permission account for the 403 specs |
+| `TEST_LIMITED_USER_PASSWORD` | no | Password for that account |
+| `TEST_DEVICE_NAME` | no | Sanctum token label (default `playwright-api-tests`) |
+| `TEST_TIMEOUT` | no | Per-test timeout in ms (default `30000`) |
 
-**Total: 466 tests in 24 spec files.**
+The authorization specs skip themselves when the limited user is not configured.
 
-## 2. Project Structure
+## Running
 
-```text
-tests/playwright-api/
-├── api/
-│   └── ApiClient.ts          # Generic HTTP client wrapper (GET/POST/PUT/PATCH/DELETE + auth)
-├── fixtures/
-│   └── api.fixture.ts        # Custom Playwright fixtures: authed API client + service factories
-├── services/                 # Endpoint-specific service classes (LeadService, AuthService, ...)
-├── utils/
-│   └── config.ts             # Central config (base URL + credentials from environment)
-├── tests/
-│   └── api/                  # Spec files (24 files)
-├── playwright.config.ts      # Playwright configuration
-├── .env.example              # Environment variable template
-└── package.json              # Scripts and dependencies
+```bash
+npm test                  # everything
+npm run test:smoke        # core happy paths — the PR gate
+npm run test:regression   # full regression
+npm run test:crud
+npm run test:negative
+npm run test:validation
+npm run test:auth
+npm run test:security
+npm run typecheck         # TypeScript, no tests executed
+npm run test:report       # open the last HTML report
 ```
 
-## 3. Prerequisites
+Arbitrary filters work too:
 
-- **Node.js** >= 18
-- A running **Krayin CRM** (v2.x) instance with the **Krayin REST API** module installed
-- An **admin user** whose credentials will be used by the tests
-
-## 4. Environment Variables
-
-| Variable | Default | Description |
-|---|---|---|
-| `APP_URL` | `http://127.0.0.1:8000` | Base URL of the Krayin CRM application |
-| `TEST_USER_EMAIL` | `admin@example.com` | Admin email used for API login |
-| `TEST_USER_PASSWORD` | `admin123` | Admin password used for API login |
-
-Copy `.env.example` to `.env` or export the variables in your shell.
-
-> The suite authenticates via `POST /api/v1/login` and sends a Bearer token on every subsequent request.
-
-## 5. Local Setup
-
-### 5.1 Install Krayin CRM with the REST API module
-
-```shell
-# Create the Krayin CRM project
-# (pinned to 2.1.* — the REST API module currently targets Krayin v2.1 / Laravel 10)
-composer create-project krayin/laravel-crm "2.1.*"
-
-cd krayin-app   # or your project folder name
-
-# Configure your database in .env (DB_DATABASE, DB_USERNAME, DB_PASSWORD), then:
-php artisan krayin-crm:install
-
-# Install the REST API module
-composer require krayin/rest-api
-php artisan krayin-rest-api:install
+```bash
+npx playwright test --grep "@pagination|@acid"
+npx playwright test --grep-invert @security
 ```
 
-Add the following to the Krayin `.env` file:
+## Tags
 
-```env
-SANCTUM_STATEFUL_DOMAINS="${APP_URL}"
-L5_SWAGGER_UI_PERSIST_AUTHORIZATION=true
-```
+Every test carries at least one tag plus `@regression`.
 
-### 5.2 Run the test suite
+`@smoke` `@regression` `@crud` `@negative` `@auth` `@authorization`
+`@validation` `@pagination` `@security` `@acid`
 
-```shell
-cd tests/playwright-api
+## Conventions
 
-npm install
-npx playwright install chromium
+- **Services only.** Specs never call `request.post()` or touch a URL directly;
+  every endpoint gets a named service method.
+- **A 200 is not a pass.** Use the helpers in `utils/assertions.ts` — they assert
+  status *and* content type *and* schema, and on failure print the endpoint,
+  payload and body with every secret redacted.
+- **No secrets in output.** Tokens, passwords and API keys are never logged, not
+  even in failure messages.
+- **Self-cleaning.** Register anything you create with the `cleanup` fixture;
+  it runs LIFO after the test whether it passed or failed.
+- **Unique data.** Build payloads with `utils/test-data.ts`; never a fixed id.
 
-cp .env.example .env    # adjust APP_URL / credentials if needed
+### Parallelism
 
-npx playwright test
-```
+Krayin's `login` revokes every existing token for the user, so two workers
+authenticating as the same account invalidate each other mid-run. The suite
+therefore runs single-worker and serial. Raising `workers` requires provisioning
+a distinct API user per worker first.
 
-The application must be reachable at `APP_URL`. If you serve Krayin locally:
+## CI
 
-```shell
-php artisan serve --host=127.0.0.1 --port=8000
-```
-
-## 6. Running Tests
-
-```shell
-# All tests
-npx playwright test
-
-# By area (npm scripts)
-npm run test:auth         # Authentication
-npm run test:leads        # Leads
-npm run test:contacts     # Persons + Organizations
-npm run test:products     # Products
-npm run test:quotes       # Quotes
-npm run test:activities   # Activities
-npm run test:mails        # Mails
-npm run test:dashboard    # Dashboard
-npm run test:settings     # All settings suites
-
-# Single file / single test by title
-npx playwright test tests/api/auth.spec.ts
-npx playwright test -g "login with valid credentials"
-
-# Debug helpers
-npx playwright test --headed      # not useful for pure API tests, kept for convenience
-npx playwright test --ui          # interactive UI mode
-npx playwright show-report        # open latest HTML report
-```
-
-Reports are written per run to `reports/<timestamp>/` (`html/index.html` and `results.json`). On failure, failed requests (URL, status, response body) are logged to the console for quick triage.
-
-CI retries failing tests twice (`retries: 2`) while local runs do not retry.
-
-## 7. Continuous Integration
-
-The GitHub Actions workflow [`.github/workflows/playwright-api-tests.yml`](../../.github/workflows/playwright-api-tests.yml) runs the full suite automatically:
-
-1. Starts a MySQL 8 service container.
-2. Installs **Krayin CRM 2.1.\*** via `composer create-project krayin/laravel-crm` (the REST API module targets Krayin v2.1 / Laravel 10).
-3. Registers **this repository** as a composer path repository and installs it as the REST API module (`krayin/rest-api:@dev`), so every PR is tested against its own code.
-4. Runs `krayin-crm:install`, creates the admin user non-interactively and runs `krayin-rest-api:install`.
-5. Serves the app (`php artisan serve`) and smoke-checks the login endpoint.
-6. Runs all Playwright tests against `http://127.0.0.1:8000`.
-7. Uploads the HTML report as a workflow artifact (`playwright-api-report`) on every run — including failures.
-
-To trigger manually, use the **Run workflow** button under *Actions → Playwright API Tests*.
-
-## 8. Writing New Tests
-
-Follow the existing pattern — use fixtures instead of calling raw fetch:
-
-```typescript
-import { test, expect } from '../../fixtures/api.fixture';
-
-test.describe('My Feature API', () => {
-  test('creates a resource', async ({ authedApi }) => {
-    const response = await authedApi.post('api/v1/my-feature', {
-      data: { name: 'test' },
-    });
-
-    expect(response.status()).toBe(200);
-  });
-});
-```
-
-- Add reusable endpoint calls to a service class under `services/` and expose it through `fixtures/api.fixture.ts`.
-- Always clean up created resources (`DELETE`) so runs stay idempotent.
-- Use the `unique()` helper from `api/ApiClient.ts` for unique names/values.
+`.github/workflows/playwright-api-tests.yml` installs Krayin, registers this
+repository as the REST API module, creates a throwaway admin with a per-run
+generated password, type-checks the suite, runs `@smoke` as a gate and then the
+full `@regression` suite. Reports upload as an artifact on every run.

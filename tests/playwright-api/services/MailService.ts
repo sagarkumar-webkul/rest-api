@@ -18,7 +18,7 @@ export class MailService extends Service {
     return this.client.get(`/api/v1/mails/attachment-download/${id}`);
   }
 
-  async massUpdate(indices: number[], folders: string[], value: number): Promise<APIResponse> {
+  async massUpdateFolders(indices: number[], folders: string[], value: number): Promise<APIResponse> {
     return this.client.post('/api/v1/mails/mass-update', {
       data: { indices, folders, value },
     });

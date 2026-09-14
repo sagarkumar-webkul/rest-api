@@ -39,7 +39,7 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: root
       TEST_USER_EMAIL: admin@example.com
-      TEST_USER_PASSWORD: admin123
+      TEST_DEVICE_NAME: playwright-api-tests
 
     steps:
       - name: Checkout repository
@@ -48,6 +48,14 @@ jobs:
       # Defined here because the runner context is not available in job-level env
       - name: Define application directory
         run: echo "APP_DIR=${RUNNER_TEMP}/krayin-app" >> "$GITHUB_ENV"
+
+      # The admin account exists only for the lifetime of this ephemeral job, so
+      # its password is generated per run and masked rather than committed.
+      - name: Generate throwaway admin password
+        run: |
+          PASSWORD=$(openssl rand -base64 24)
+          echo "::add-mask::$PASSWORD"
+          echo "TEST_USER_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
 
       - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
@@ -107,7 +115,7 @@ jobs:
       - name: Create admin user
         working-directory: ${{ env.APP_DIR }}
         run: |
-          HASH=$(php -r "echo password_hash('${{ env.TEST_USER_PASSWORD }}', PASSWORD_BCRYPT, ['cost' => 10]);")
+          HASH=$(php -r 'echo password_hash(getenv("TEST_USER_PASSWORD"), PASSWORD_BCRYPT, ["cost" => 10]);')
 
           mysql -h"${{ env.DB_HOST }}" -P"${{ env.DB_PORT }}" -u"${{ env.DB_USERNAME }}" -p"${{ env.DB_PASSWORD }}" "${{ env.DB_DATABASE }}" <<SQL
           INSERT INTO users (id, name, email, password, role_id, status)
@@ -202,7 +210,7 @@ jobs:
             -X POST "${{ env.APP_URL }}/api/v1/login" \
             -H 'Content-Type: application/json' \
             -H 'Accept: application/json' \
-            -d '{"email": "${{ env.TEST_USER_EMAIL }}", "password": "${{ env.TEST_USER_PASSWORD }}", "device_name": "android"}')
+            --data "$(jq -nc --arg e "$TEST_USER_EMAIL" --arg p "$TEST_USER_PASSWORD" --arg d "$TEST_DEVICE_NAME" '{email:$e,password:$p,device_name:$d}')")
           echo "Login endpoint -> HTTP $CODE"
           cat /tmp/login.json | head -c 500; echo
           exit 0
@@ -211,15 +219,33 @@ jobs:
         working-directory: tests/playwright-api
         run: npm ci
 
+      - name: Type-check the test suite
+        working-directory: tests/playwright-api
+        run: npm run typecheck
+
       - name: Install Playwright browser
         working-directory: tests/playwright-api
         run: npx playwright install chromium --with-deps
 
-      - name: Run Playwright API tests
+      # Fast feedback: if the core happy paths are broken there is no point
+      # spending the rest of the job on the full suite.
+      - name: Run smoke tests
         working-directory: tests/playwright-api
         env:
           APP_URL: ${{ env.APP_URL }}
-        run: npx playwright test
+          TEST_USER_EMAIL: ${{ env.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ env.TEST_USER_PASSWORD }}
+          TEST_DEVICE_NAME: ${{ env.TEST_DEVICE_NAME }}
+        run: npx playwright test --grep @smoke
+
+      - name: Run full regression suite
+        working-directory: tests/playwright-api
+        env:
+          APP_URL: ${{ env.APP_URL }}
+          TEST_USER_EMAIL: ${{ env.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ env.TEST_USER_PASSWORD }}
+          TEST_DEVICE_NAME: ${{ env.TEST_DEVICE_NAME }}
+        run: npx playwright test --grep @regression
 
       - name: Upload test report
         if: always()

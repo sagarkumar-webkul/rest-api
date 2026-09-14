@@ -4,8 +4,19 @@ import { Service } from './Service';
 
 export interface QuoteData {
   subject?: string;
+  description?: string;
   person_id?: number;
-  items?: Array<{ product_id: number; quantity: number; price: number }>;
+  user_id?: number;
+  lead_id?: number;
+  expired_at?: string;
+  billing_address?: Record<string, any>;
+  shipping_address?: Record<string, any>;
+  discount_percent?: number;
+  discount_amount?: number;
+  tax_amount?: number;
+  adjustment_amount?: number;
+  items?: Array<{ product_id: number; quantity: number; price: number; [key: string]: any }>;
+  [key: string]: any;
 }
 
 export class QuoteService extends Service {

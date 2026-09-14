@@ -1,19 +1,19 @@
 import { test, expect, unique, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Settings Attributes API', () => {
-  test('list attributes without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list attributes without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/settings/attributes');
     await logResponseOnFailure(response, 'list attributes without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list attributes', async ({ attributeService }) => {
+  test('@crud @regression list attributes', async ({ attributeService }) => {
     const response = await attributeService.list();
     await logResponseOnFailure(response, 'list attributes');
     expect(response.status()).toBe(200);
   });
 
-  test('create attribute', async ({ attributeService }) => {
+  test('@crud @regression create attribute', async ({ attributeService }) => {
     const response = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -26,13 +26,13 @@ test.describe('Settings Attributes API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('create attribute with empty payload', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression create attribute with empty payload', async ({ attributeService }) => {
     const response = await attributeService.create({});
     await logResponseOnFailure(response, 'create attribute with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('show attribute', async ({ attributeService }) => {
+  test('@crud @regression show attribute', async ({ attributeService }) => {
     const createResponse = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -48,13 +48,13 @@ test.describe('Settings Attributes API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show attribute not found', async ({ attributeService }) => {
+  test('@crud @negative @regression show attribute not found', async ({ attributeService }) => {
     const response = await attributeService.getById(999999);
     await logResponseOnFailure(response, 'show attribute not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update attribute', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression update attribute', async ({ attributeService }) => {
     const createResponse = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -68,7 +68,7 @@ test.describe('Settings Attributes API', () => {
     expect(response.status()).toBe(422);  
   });
 
-  test('update attribute with empty payload', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression update attribute with empty payload', async ({ attributeService }) => {
     const createResponse = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -82,7 +82,7 @@ test.describe('Settings Attributes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('delete attribute', async ({ attributeService }) => {
+  test('@crud @regression delete attribute', async ({ attributeService }) => {
     const createResponse = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -96,27 +96,27 @@ test.describe('Settings Attributes API', () => {
     expect(response.ok()).toBeTruthy();
   });
 
-  test('delete attribute not found', async ({ attributeService }) => {
+  test('@crud @negative @regression delete attribute not found', async ({ attributeService }) => {
     const response = await attributeService.delete(999999);
     await logResponseOnFailure(response, 'delete attribute not found');
     expect(response.status()).toBe(404);
   });
 
-  test('wrong http method', async ({ authedApi }) => {
+  test('@negative @regression wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/settings/attributes/1', { data: {} });
     await logResponseOnFailure(response, 'wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue115: list attributes with invalid sort parameter', async ({ attributeService }) => {
-    const response = await attributeService.client.get('/api/v1/settings/attributes', {
+  test('@validation @pagination @crud @negative @regression issue115: list attributes with invalid sort parameter', async ({ attributeService }) => {
+    const response = await attributeService.list({
       params: { sort: 'bogus' },
     });
     await logResponseOnFailure(response, 'issue115: list attributes with invalid sort parameter');
     expect(response.status()).toBe(422);
   });
 
-  test('issue116: create attribute with invalid lookup type', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression issue116: create attribute with invalid lookup type', async ({ attributeService }) => {
     const response = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -128,7 +128,7 @@ test.describe('Settings Attributes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue117: create attribute with invalid entity type', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression issue117: create attribute with invalid entity type', async ({ attributeService }) => {
     const response = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -139,7 +139,7 @@ test.describe('Settings Attributes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue118: create attribute with non-boolean flags', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression issue118: create attribute with non-boolean flags', async ({ attributeService }) => {
     const response = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -152,7 +152,7 @@ test.describe('Settings Attributes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue119: create attribute with invalid type', async ({ attributeService }) => {
+  test('@validation @crud @negative @regression issue119: create attribute with invalid type', async ({ attributeService }) => {
     const response = await attributeService.create({
       code: unique('attr'),
       name: unique('Attribute'),
@@ -163,31 +163,31 @@ test.describe('Settings Attributes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue120: show attribute with invalid id', async ({ attributeService }) => {
+  test('@crud @negative @regression issue120: show attribute with invalid id', async ({ attributeService }) => {
     const response = await attributeService.getById(999999);
     await logResponseOnFailure(response, 'issue120: show attribute with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue121: update attribute with invalid id', async ({ attributeService }) => {
+  test('@crud @negative @regression issue121: update attribute with invalid id', async ({ attributeService }) => {
     const response = await attributeService.update(999999, { name: unique('Attribute') });
     await logResponseOnFailure(response, 'issue121: update attribute with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue123: delete attribute with invalid id', async ({ attributeService }) => {
+  test('@crud @negative @regression issue123: delete attribute with invalid id', async ({ attributeService }) => {
     const response = await attributeService.delete(999999);
     await logResponseOnFailure(response, 'issue123: delete attribute with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue124: mass destroy attributes with invalid ids', async ({ attributeService }) => {
+  test('@acid @crud @negative @regression issue124: mass destroy attributes with invalid ids', async ({ attributeService }) => {
     const response = await attributeService.massDestroy([999999]);
     await logResponseOnFailure(response, 'issue124: mass destroy attributes with invalid ids');
     expect(response.status()).toBe(404);
   });
 
-  test('issue126: delete default attribute', async ({ attributeService }) => {
+  test('@crud @negative @regression issue126: delete default attribute', async ({ attributeService }) => {
     const response = await attributeService.delete(1);
     await logResponseOnFailure(response, 'issue126: delete default attribute');
     expect(response.status()).toBe(404);

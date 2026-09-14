@@ -1,19 +1,19 @@
 import { test, expect, unique, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Quotes API', () => {
-  test('list quotes without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list quotes without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/quotes');
     await logResponseOnFailure(response, 'list quotes without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list quotes', async ({ quoteService }) => {
+  test('@smoke @crud @regression list quotes', async ({ quoteService }) => {
     const response = await quoteService.list();
     await logResponseOnFailure(response, 'list quotes');
     expect(response.status()).toBe(200);
   });
 
-  test('create quote success', async ({ personService, productService, quoteService }) => {
+  test('@smoke @crud @regression create quote success', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -41,13 +41,13 @@ test.describe('Quotes API', () => {
     expect(body.message).toContain('created successfully');
   });
 
-  test('create quote with empty payload', async ({ quoteService }) => {
+  test('@validation @crud @negative @regression create quote with empty payload', async ({ quoteService }) => {
     const response = await quoteService.create({});
     await logResponseOnFailure(response, 'create quote with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('create quote with invalid item quantity', async ({ personService, quoteService }) => {
+  test('@validation @crud @negative @regression create quote with invalid item quantity', async ({ personService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -66,7 +66,7 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('show quote', async ({ personService, productService, quoteService }) => {
+  test('@crud @regression show quote', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -95,13 +95,13 @@ test.describe('Quotes API', () => {
     expect(body.data.id).toBe(quote.id);
   });
 
-  test('show quote not found', async ({ quoteService }) => {
+  test('@crud @negative @regression show quote not found', async ({ quoteService }) => {
     const response = await quoteService.getById(999999);
     await logResponseOnFailure(response, 'show quote not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update quote', async ({ personService, productService, quoteService }) => {
+  test('@crud @regression update quote', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -137,7 +137,7 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update quote with invalid date', async ({ personService, productService, quoteService }) => {
+  test('@validation @crud @negative @regression update quote with invalid date', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -174,7 +174,7 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('delete quote', async ({ personService, productService, quoteService }) => {
+  test('@crud @regression delete quote', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -203,25 +203,25 @@ test.describe('Quotes API', () => {
     expect(body.data.message).toContain('deleted successfully');
   });
 
-  test('delete quote not found', async ({ quoteService }) => {
+  test('@crud @negative @regression delete quote not found', async ({ quoteService }) => {
     const response = await quoteService.delete(999999);
     await logResponseOnFailure(response, 'delete quote not found');
     expect(response.status()).toBe(404);
   });
 
-  test('export quotes', async ({ quoteService }) => {
+  test('@crud @regression export quotes', async ({ quoteService }) => {
     const response = await quoteService.export();
     await logResponseOnFailure(response, 'export quotes');
     expect(response.status()).toBe(200);
   });
 
-  test('search quotes', async ({ quoteService }) => {
+  test('@pagination @regression search quotes', async ({ quoteService }) => {
     const response = await quoteService.search('Test');
     await logResponseOnFailure(response, 'search quotes');
     expect(response.status()).toBe(200);
   });
 
-  test('mass destroy quotes', async ({ personService, productService, quoteService }) => {
+  test('@acid @crud @regression mass destroy quotes', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -248,15 +248,13 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('mass destroy quotes with missing indices', async ({ quoteService }) => {
-    const response = await quoteService.client.post('/api/v1/quotes/mass-destroy', {
-      data: {},
-    });
+  test('@validation @acid @crud @negative @regression mass destroy quotes with missing indices', async ({ quoteService }) => {
+    const response = await quoteService.massDestroyRaw({});
     await logResponseOnFailure(response, 'mass destroy quotes with missing indices');
     expect(response.status()).toBe(422);
   });
 
-  test('quote items', async ({ personService, productService, quoteService }) => {
+  test('@crud @regression quote items', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -283,13 +281,13 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('quote items for missing quote', async ({ quoteService }) => {
+  test('@negative @regression quote items for missing quote', async ({ quoteService }) => {
     const response = await quoteService.getItems(999999);
     await logResponseOnFailure(response, 'quote items for missing quote');
     expect(response.status()).toBe(404);
   });
 
-  test('quote lead products', async ({ leadService, quoteService }) => {
+  test('@crud @regression quote lead products', async ({ leadService, quoteService }) => {
     const leadResponse = await leadService.create({
       title: unique('Lead'),
       lead_source_id: 1,
@@ -304,13 +302,13 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('quote lead products not found', async ({ quoteService }) => {
+  test('@negative @regression quote lead products not found', async ({ quoteService }) => {
     const response = await quoteService.getLeadProducts(999999);
     await logResponseOnFailure(response, 'quote lead products not found');
     expect(response.status()).toBe(404);
   });
 
-  test('quote mail fails without mail server', async ({ personService, productService, quoteService }) => {
+  test('@negative @regression quote mail fails without mail server', async ({ personService, productService, quoteService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -341,13 +339,13 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(500);
   });
 
-  test('quote with wrong http method', async ({ authedApi }) => {
+  test('@negative @regression quote with wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/quotes/1', { data: {} });
     await logResponseOnFailure(response, 'quote with wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue40: create quote with non-existent person', async ({ quoteService }) => {
+  test('@validation @crud @negative @regression issue40: create quote with non-existent person', async ({ quoteService }) => {
     const response = await quoteService.create({
       subject: unique('Quote'),
       person_id: 999999,
@@ -357,7 +355,7 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue41: create quote with past expired date', async ({ quoteService, personService }) => {
+  test('@validation @crud @negative @regression issue41: create quote with past expired date', async ({ quoteService, personService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -374,7 +372,7 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue42: create quote with invalid user id', async ({ quoteService, personService }) => {
+  test('@validation @crud @negative @regression issue42: create quote with invalid user id', async ({ quoteService, personService }) => {
     const personResponse = await personService.create({
       name: unique('Person'),
       emails: [{ value: unique('person') + '@example.com', label: 'work' }],
@@ -391,7 +389,7 @@ test.describe('Quotes API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue43: search quotes with non-matching person name returns empty', async ({ quoteService }) => {
+  test('@pagination @negative @regression issue43: search quotes with non-matching person name returns empty', async ({ quoteService }) => {
     const response = await quoteService.search('NonExistentPersonXYZ12345');
     await logResponseOnFailure(response, 'issue43: search quotes with non-matching person name returns empty');
     expect(response.status()).toBe(200);
@@ -399,25 +397,25 @@ test.describe('Quotes API', () => {
     expect(body.data.length).toBe(0);
   });
 
-  test('issue44: show quote with invalid id', async ({ quoteService }) => {
+  test('@crud @negative @regression issue44: show quote with invalid id', async ({ quoteService }) => {
     const response = await quoteService.getById(999999);
     await logResponseOnFailure(response, 'issue44: show quote with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue45: update quote with invalid id', async ({ quoteService }) => {
+  test('@crud @negative @regression issue45: update quote with invalid id', async ({ quoteService }) => {
     const response = await quoteService.update(999999, { subject: unique('Quote') });
     await logResponseOnFailure(response, 'issue45: update quote with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue46: delete quote with invalid id', async ({ quoteService }) => {
+  test('@crud @negative @regression issue46: delete quote with invalid id', async ({ quoteService }) => {
     const response = await quoteService.delete(999999);
     await logResponseOnFailure(response, 'issue46: delete quote with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue47: mass destroy quotes with invalid ids', async ({ quoteService }) => {
+  test('@acid @crud @negative @regression issue47: mass destroy quotes with invalid ids', async ({ quoteService }) => {
     const response = await quoteService.massDestroy([999999]);
     await logResponseOnFailure(response, 'issue47: mass destroy quotes with invalid ids');
     expect(response.status()).toBe(404);

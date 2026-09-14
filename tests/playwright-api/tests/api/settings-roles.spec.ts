@@ -1,19 +1,19 @@
 import { test, expect, unique, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Settings Roles API', () => {
-  test('list roles without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list roles without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/settings/roles');
     await logResponseOnFailure(response, 'list roles without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list roles', async ({ roleService }) => {
+  test('@crud @regression list roles', async ({ roleService }) => {
     const response = await roleService.list();
     await logResponseOnFailure(response, 'list roles');
     expect(response.status()).toBe(200);
   });
 
-  test('create role', async ({ roleService }) => {
+  test('@crud @regression create role', async ({ roleService }) => {
     const response = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -24,13 +24,13 @@ test.describe('Settings Roles API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('create role with empty payload', async ({ roleService }) => {
+  test('@validation @crud @negative @regression create role with empty payload', async ({ roleService }) => {
     const response = await roleService.create({});
     await logResponseOnFailure(response, 'create role with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('show role', async ({ roleService }) => {
+  test('@crud @regression show role', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -44,13 +44,13 @@ test.describe('Settings Roles API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show role not found', async ({ roleService }) => {
+  test('@crud @negative @regression show role not found', async ({ roleService }) => {
     const response = await roleService.getById(999999);
     await logResponseOnFailure(response, 'show role not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update role', async ({ roleService }) => {
+  test('@crud @regression update role', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -65,7 +65,7 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update role with empty payload', async ({ roleService }) => {
+  test('@validation @crud @negative @regression update role with empty payload', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -77,7 +77,7 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('delete role', async ({ roleService }) => {
+  test('@crud @regression delete role', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -89,19 +89,19 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete role not found', async ({ roleService }) => {
+  test('@crud @negative @regression delete role not found', async ({ roleService }) => {
     const response = await roleService.delete(999999);
     await logResponseOnFailure(response, 'delete role not found');
     expect(response.status()).toBe(404);
   });
 
-  test('wrong http method', async ({ authedApi }) => {
+  test('@negative @regression wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/settings/roles/1', { data: {} });
     await logResponseOnFailure(response, 'wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue87: create role with invalid permissions', async ({ roleService }) => {
+  test('@authorization @validation @crud @negative @regression issue87: create role with invalid permissions', async ({ roleService }) => {
     const response = await roleService.create({
       name: unique('Role'),
       permissions: { 'bogus.permission.key': 1 },
@@ -110,7 +110,7 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue88: create role with invalid permission type', async ({ roleService }) => {
+  test('@authorization @validation @crud @negative @regression issue88: create role with invalid permission type', async ({ roleService }) => {
     const response = await roleService.create({
       name: unique('Role'),
       permission_type: 'bogus',
@@ -119,13 +119,13 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue89: show role with invalid id', async ({ roleService }) => {
+  test('@crud @negative @regression issue89: show role with invalid id', async ({ roleService }) => {
     const response = await roleService.getById(999999);
     await logResponseOnFailure(response, 'issue89: show role with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue90: update role with invalid permissions', async ({ roleService }) => {
+  test('@authorization @validation @crud @negative @regression issue90: update role with invalid permissions', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -140,7 +140,7 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue91: update role with invalid permission type', async ({ roleService }) => {
+  test('@authorization @validation @crud @negative @regression issue91: update role with invalid permission type', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',
@@ -155,13 +155,13 @@ test.describe('Settings Roles API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue92: delete role with invalid id', async ({ roleService }) => {
+  test('@crud @negative @regression issue92: delete role with invalid id', async ({ roleService }) => {
     const response = await roleService.delete(999999);
     await logResponseOnFailure(response, 'issue92: delete role with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue93: delete valid role', async ({ roleService }) => {
+  test('@crud @regression issue93: delete valid role', async ({ roleService }) => {
     const createResponse = await roleService.create({
       name: unique('Role'),
       permission_type: 'all',

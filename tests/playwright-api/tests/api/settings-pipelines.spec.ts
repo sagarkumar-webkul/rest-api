@@ -1,19 +1,19 @@
 import { test, expect, unique, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Settings Pipelines API', () => {
-  test('list pipelines without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list pipelines without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/settings/pipelines');
     await logResponseOnFailure(response, 'list pipelines without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list pipelines', async ({ pipelineService }) => {
+  test('@crud @regression list pipelines', async ({ pipelineService }) => {
     const response = await pipelineService.list();
     await logResponseOnFailure(response, 'list pipelines');
     expect(response.status()).toBe(200);
   });
 
-  test('create pipeline', async ({ pipelineService }) => {
+  test('@crud @regression create pipeline', async ({ pipelineService }) => {
     const response = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [
@@ -26,13 +26,13 @@ test.describe('Settings Pipelines API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('create pipeline with empty payload', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression create pipeline with empty payload', async ({ pipelineService }) => {
     const response = await pipelineService.create({});
     await logResponseOnFailure(response, 'create pipeline with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('show pipeline', async ({ pipelineService }) => {
+  test('@crud @regression show pipeline', async ({ pipelineService }) => {
     const createResponse = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [
@@ -48,13 +48,13 @@ test.describe('Settings Pipelines API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show pipeline not found', async ({ pipelineService }) => {
+  test('@crud @negative @regression show pipeline not found', async ({ pipelineService }) => {
     const response = await pipelineService.getById(999999);
     await logResponseOnFailure(response, 'show pipeline not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update pipeline', async ({ pipelineService }) => {
+  test('@crud @regression update pipeline', async ({ pipelineService }) => {
     const createResponse = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [
@@ -73,7 +73,7 @@ test.describe('Settings Pipelines API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update pipeline with empty payload', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression update pipeline with empty payload', async ({ pipelineService }) => {
     const createResponse = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [
@@ -87,7 +87,7 @@ test.describe('Settings Pipelines API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('delete pipeline', async ({ pipelineService }) => {
+  test('@crud @regression delete pipeline', async ({ pipelineService }) => {
     const createResponse = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [
@@ -101,13 +101,13 @@ test.describe('Settings Pipelines API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete pipeline not found', async ({ pipelineService }) => {
+  test('@crud @negative @regression delete pipeline not found', async ({ pipelineService }) => {
     const response = await pipelineService.delete(999999);
     await logResponseOnFailure(response, 'delete pipeline not found');
     expect(response.status()).toBe(404);
   });
 
-  test('create pipeline without stages', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression create pipeline without stages', async ({ pipelineService }) => {
     const response = await pipelineService.create({ name: unique('Pipeline') });
     await logResponseOnFailure(response, 'create pipeline without stages');
     expect(response.status()).toBe(422);
@@ -115,7 +115,7 @@ test.describe('Settings Pipelines API', () => {
     expect(body.errors.stages[0]).toContain('required');
   });
 
-  test('create pipeline with duplicate stage codes', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression create pipeline with duplicate stage codes', async ({ pipelineService }) => {
     const response = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [
@@ -127,21 +127,21 @@ test.describe('Settings Pipelines API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('wrong http method', async ({ authedApi }) => {
+  test('@negative @regression wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/settings/pipelines/1', { data: {} });
     await logResponseOnFailure(response, 'wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue127: list pipelines with invalid sort parameter', async ({ pipelineService }) => {
-    const response = await pipelineService.client.get('/api/v1/settings/pipelines', {
+  test('@validation @pagination @crud @negative @regression issue127: list pipelines with invalid sort parameter', async ({ pipelineService }) => {
+    const response = await pipelineService.list({
       params: { sort: 'bogus' },
     });
     await logResponseOnFailure(response, 'issue127: list pipelines with invalid sort parameter');
     expect(response.status()).toBe(422);
   });
 
-  test('issue128: create pipeline with negative rotten days', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression issue128: create pipeline with negative rotten days', async ({ pipelineService }) => {
     const response = await pipelineService.create({
       name: unique('Pipeline'),
       rotten_days: -5,
@@ -153,7 +153,7 @@ test.describe('Settings Pipelines API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue129: create pipeline with is_default 0 is honored', async ({ pipelineService }) => {
+  test('@crud @regression issue129: create pipeline with is_default 0 is honored', async ({ pipelineService }) => {
     const response = await pipelineService.create({
       name: unique('Pipeline'),
       is_default: 0,
@@ -167,7 +167,7 @@ test.describe('Settings Pipelines API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('issue130: create pipeline with duplicate name', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression issue130: create pipeline with duplicate name', async ({ pipelineService }) => {
     const name = unique('Pipeline');
     await pipelineService.create({
       name,
@@ -185,7 +185,7 @@ test.describe('Settings Pipelines API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue132: update pipeline with negative rotten days', async ({ pipelineService }) => {
+  test('@validation @crud @negative @regression issue132: update pipeline with negative rotten days', async ({ pipelineService }) => {
     const createResponse = await pipelineService.create({
       name: unique('Pipeline'),
       stages: [

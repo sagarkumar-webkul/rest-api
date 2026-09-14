@@ -1,19 +1,19 @@
 import { test, expect, unique, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Settings Webhooks API', () => {
-  test('list webhooks without token', async ({ apiClient }) => {
+  test('@auth @crud @negative @regression list webhooks without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/settings/webhooks');
     await logResponseOnFailure(response, 'list webhooks without token');
     expect(response.status()).toBe(401);
   });
 
-  test('list webhooks', async ({ webhookService }) => {
+  test('@crud @regression list webhooks', async ({ webhookService }) => {
     const response = await webhookService.list();
     await logResponseOnFailure(response, 'list webhooks');
     expect(response.status()).toBe(200);
   });
 
-  test('create webhook', async ({ webhookService }) => {
+  test('@crud @regression create webhook', async ({ webhookService }) => {
     const response = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'leads',
@@ -27,13 +27,13 @@ test.describe('Settings Webhooks API', () => {
     expect(body.data.id).toBeTruthy();
   });
 
-  test('create webhook with empty payload', async ({ webhookService }) => {
+  test('@validation @crud @negative @regression create webhook with empty payload', async ({ webhookService }) => {
     const response = await webhookService.create({});
     await logResponseOnFailure(response, 'create webhook with empty payload');
     expect(response.status()).toBe(422);
   });
 
-  test('show webhook', async ({ webhookService }) => {
+  test('@crud @regression show webhook', async ({ webhookService }) => {
     const createResponse = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'leads',
@@ -50,13 +50,13 @@ test.describe('Settings Webhooks API', () => {
     expect(body.data.id).toBe(data.id);
   });
 
-  test('show webhook not found', async ({ webhookService }) => {
+  test('@crud @negative @regression show webhook not found', async ({ webhookService }) => {
     const response = await webhookService.getById(999999);
     await logResponseOnFailure(response, 'show webhook not found');
     expect(response.status()).toBe(404);
   });
 
-  test('update webhook', async ({ webhookService }) => {
+  test('@crud @regression update webhook', async ({ webhookService }) => {
     const createResponse = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'leads',
@@ -71,7 +71,7 @@ test.describe('Settings Webhooks API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('update webhook with empty payload', async ({ webhookService }) => {
+  test('@validation @crud @negative @regression update webhook with empty payload', async ({ webhookService }) => {
     const createResponse = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'leads',
@@ -86,7 +86,7 @@ test.describe('Settings Webhooks API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('delete webhook', async ({ webhookService }) => {
+  test('@crud @regression delete webhook', async ({ webhookService }) => {
     const createResponse = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'leads',
@@ -101,19 +101,19 @@ test.describe('Settings Webhooks API', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('delete webhook not found', async ({ webhookService }) => {
+  test('@crud @negative @regression delete webhook not found', async ({ webhookService }) => {
     const response = await webhookService.delete(999999);
     await logResponseOnFailure(response, 'delete webhook not found');
     expect(response.status()).toBe(404);
   });
 
-  test('wrong http method', async ({ authedApi }) => {
+  test('@negative @regression wrong http method', async ({ authedApi }) => {
     const response = await authedApi.patch('/api/v1/settings/webhooks/1', { data: {} });
     await logResponseOnFailure(response, 'wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('issue147: create webhook with invalid entity type', async ({ webhookService }) => {
+  test('@validation @crud @negative @regression issue147: create webhook with invalid entity type', async ({ webhookService }) => {
     const response = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'bogus',
@@ -125,7 +125,7 @@ test.describe('Settings Webhooks API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue148: create webhook with duplicate name', async ({ webhookService }) => {
+  test('@validation @crud @negative @regression issue148: create webhook with duplicate name', async ({ webhookService }) => {
     const name = unique('Webhook');
     await webhookService.create({
       name,
@@ -145,19 +145,19 @@ test.describe('Settings Webhooks API', () => {
     expect(response.status()).toBe(422);
   });
 
-  test('issue149: update webhook with invalid id', async ({ webhookService }) => {
+  test('@crud @negative @regression issue149: update webhook with invalid id', async ({ webhookService }) => {
     const response = await webhookService.update(999999, { name: unique('Webhook') });
     await logResponseOnFailure(response, 'issue149: update webhook with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue150: delete webhook with invalid id', async ({ webhookService }) => {
+  test('@crud @negative @regression issue150: delete webhook with invalid id', async ({ webhookService }) => {
     const response = await webhookService.delete(999999);
     await logResponseOnFailure(response, 'issue150: delete webhook with invalid id');
     expect(response.status()).toBe(404);
   });
 
-  test('issue151: create webhook with duplicate events', async ({ webhookService }) => {
+  test('@validation @crud @negative @regression issue151: create webhook with duplicate events', async ({ webhookService }) => {
     const response = await webhookService.create({
       name: unique('Webhook'),
       entity_type: 'leads',

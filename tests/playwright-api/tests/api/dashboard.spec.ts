@@ -1,13 +1,13 @@
 import { test, expect, logResponseOnFailure } from '../../fixtures/api.fixture';
 
 test.describe('Dashboard API', () => {
-  test('dashboard stats without token', async ({ apiClient }) => {
+  test('@auth @negative @regression dashboard stats without token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/dashboard/stats');
     await logResponseOnFailure(response, 'dashboard stats without token');
     expect(response.status()).toBe(401);
   });
 
-  test('dashboard stats success', async ({ authedApi }) => {
+  test('@crud @regression dashboard stats success', async ({ authedApi }) => {
     const response = await authedApi.get('/api/v1/dashboard/stats');
     await logResponseOnFailure(response, 'dashboard stats success');
     expect(response.status()).toBe(200);
@@ -20,13 +20,13 @@ test.describe('Dashboard API', () => {
     expect(body.data.total_products).toBeTruthy();
   });
 
-  test('dashboard stats with wrong http method', async ({ authedApi }) => {
+  test('@negative @regression dashboard stats with wrong http method', async ({ authedApi }) => {
     const response = await authedApi.post('/api/v1/dashboard/stats', { data: {} });
     await logResponseOnFailure(response, 'dashboard stats with wrong http method');
     expect(response.status()).toBe(405);
   });
 
-  test('dashboard stats with invalid token', async ({ apiClient }) => {
+  test('@auth @negative @regression dashboard stats with invalid token', async ({ apiClient }) => {
     const response = await apiClient.get('/api/v1/dashboard/stats', {
       headers: { Authorization: 'Bearer invalid-token-123' },
     });

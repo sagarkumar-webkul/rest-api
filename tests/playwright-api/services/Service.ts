@@ -37,6 +37,22 @@ export class Service {
     });
   }
 
+  /**
+   * Post an arbitrary body to `mass-destroy` — for the validation specs that
+   * deliberately omit or malform `indices`.
+   */
+  async massDestroyRaw(data: any, options?: RequestOptions): Promise<APIResponse> {
+    return this.client.post(`${this.basePath}/mass-destroy`, { data, ...options });
+  }
+
+  /**
+   * Post an arbitrary body to `mass-update` — for the validation specs that
+   * deliberately omit or malform the payload.
+   */
+  async massUpdateRaw(data: any, options?: RequestOptions): Promise<APIResponse> {
+    return this.client.post(`${this.basePath}/mass-update`, { data, ...options });
+  }
+
   async massDestroy(indices: number[], options?: RequestOptions): Promise<APIResponse> {
     return this.client.post(`${this.basePath}/mass-destroy`, {
       data: { indices },

@@ -1,6 +1,7 @@
-import { test as base, expect, APIResponse } from '@playwright/test';
+import { test as base, expect, APIResponse, request as playwrightRequest } from '@playwright/test';
 import { ApiClient, unique, uniqueNumber, waitForNextSecond } from '../api/ApiClient';
-import { config } from '../utils/config';
+import { config, hasLimitedUser } from '../utils/config';
+import { Cleanup } from '../utils/cleanup';
 import {
   AuthService,
   LeadService,
@@ -27,22 +28,86 @@ import {
   MarketingCampaignService,
 } from '../services';
 
+const SECRET_KEYS = /password|token|secret|api[-_]?key|authorization/i;
+
+const redact = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(redact);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+        key,
+        SECRET_KEYS.test(key) ? '***' : redact(entry),
+      ]),
+    );
+  }
+
+  return value;
+};
+
+/**
+ * Print enough context to debug a failed call, with every secret redacted.
+ * Prefer the helpers in `utils/assertions.ts` — they attach this same context
+ * to the assertion message itself instead of only the console.
+ */
 async function logResponseOnFailure(response: APIResponse, testName: string) {
   if (response.status() >= 400) {
     const body = await response.json().catch(() => null);
+
     console.log(`\n${'='.repeat(80)}`);
     console.log(`FAILED: ${testName}`);
     console.log(`URL: ${response.url()}`);
     console.log(`Status: ${response.status()} ${response.statusText()}`);
-    console.log(`Response Body:`, JSON.stringify(body, null, 2));
+    console.log('Response Body:', JSON.stringify(redact(body), null, 2));
     console.log(`${'='.repeat(80)}\n`);
   }
 }
 
+/**
+ * Mint a token for the given credentials on a throwaway context.
+ *
+ * Krayin's login revokes every existing token for the user, so two workers
+ * logging in as the same account would invalidate each other — the suite runs
+ * with a single worker (see playwright.config.ts) for that reason.
+ */
+async function tokenFor(email: string, password: string): Promise<string> {
+  const context = await playwrightRequest.newContext({ baseURL: config.baseUrl });
+
+  try {
+    const response = await context.post('/api/v1/login', {
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      data: { email, password, device_name: config.deviceName },
+    });
+
+    if (! response.ok()) {
+      throw new Error(
+        `Login failed (${response.status()}) for the configured test user — check the TEST_USER_* environment variables.`,
+      );
+    }
+
+    const token = (await response.json()).token;
+
+    if (! token) {
+      throw new Error('Login succeeded but no token was returned.');
+    }
+
+    return token;
+  } finally {
+    await context.dispose();
+  }
+}
+
 type ApiFixtures = {
+  /** No Authorization header — drives the 401 specs. */
   apiClient: ApiClient;
   authedApi: ApiClient;
   apiToken: string;
+  /** Authenticated as the low-permission user — drives the 403 specs. */
+  limitedApi: ApiClient;
+  /** Resources registered here are deleted after the test, pass or fail. */
+  cleanup: Cleanup;
   authService: AuthService;
   leadService: LeadService;
   personService: PersonService;
@@ -74,29 +139,8 @@ export const test = base.extend<ApiFixtures>({
     await use(client);
   },
 
-  apiToken: async ({ request }, use) => {
-    const response = await request.fetch(`${config.baseUrl}/api/v1/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      data: {
-        email: config.testUser.email,
-        password: config.testUser.password,
-        device_name: 'android',
-      },
-    });
-    const body = await response.json();
-    const token = body.token || '';
-
-    console.log(`\n${'='.repeat(80)}`);
-    console.log(`LOGIN RESPONSE:`);
-    console.log(`Status: ${response.status()}`);
-    console.log(`Token: ${token ? token.substring(0, 20) + '...' : 'N/A'}`);
-    console.log(`${'='.repeat(80)}\n`);
-
-    await use(token);
+  apiToken: async ({}, use) => {
+    await use(await tokenFor(config.testUser.email, config.testUser.password));
   },
 
   authedApi: async ({ request, apiToken }, use) => {
@@ -105,6 +149,26 @@ export const test = base.extend<ApiFixtures>({
       token: apiToken,
     });
     await use(client);
+  },
+
+  limitedApi: async ({ request }, use) => {
+    if (! hasLimitedUser()) {
+      throw new Error(
+        'The limited-permission user is not configured. Set TEST_LIMITED_USER_EMAIL and TEST_LIMITED_USER_PASSWORD, or guard the test with `test.skip(! hasLimitedUser())`.',
+      );
+    }
+
+    const token = await tokenFor(config.limitedUser.email!, config.limitedUser.password!);
+
+    await use(new ApiClient(request, { baseUrl: config.baseUrl, token }));
+  },
+
+  cleanup: async ({ authedApi }, use) => {
+    const cleanup = new Cleanup(authedApi);
+
+    await use(cleanup);
+
+    await cleanup.run();
   },
 
   authService: async ({ apiClient }, use) => {
@@ -202,3 +266,6 @@ export const test = base.extend<ApiFixtures>({
 
 export { expect } from '@playwright/test';
 export { unique, uniqueNumber, waitForNextSecond, logResponseOnFailure };
+export { config, hasLimitedUser } from '../utils/config';
+export { Cleanup } from '../utils/cleanup';
+export * from '../utils/assertions';
